@@ -1,0 +1,140 @@
+\documentclass[10pt, a4]{article}
+\usepackage[left=2.54cm, right=2.54cm, top=2cm, bottom=2.75cm]{geometry}
+\usepackage{booktabs}
+\usepackage{fancyhdr}
+\usepackage{datetime}
+\usepackage{url}
+\usepackage{float}
+\usepackage[hyperfootnotes=false]{hyperref}
+\pagestyle{fancy}
+\renewcommand{\headrulewidth}{0pt}
+\lhead{\textit{\footnotesize Generated from AplusB web application on \ddmmyyyydate\today\ at \currenttime.}}
+\chead{}
+\rhead{}
+\rfoot{}
+\cfoot{\thepage}
+\lfoot{}
+
+\newcommand\blfootnote[1]{%
+  \begingroup
+  \renewcommand\thefootnote{}\footnote{#1}%
+  \addtocounter{footnote}{-1}%
+  \endgroup
+}
+
+\begin{document}
+
+\section*{AplusB: Summary Report}
+
+You evaluated a \Sexpr{input$A} + \Sexpr{input$B} design with the following constraints:
+\begin{itemize}
+\item De-escalation of doses is \Sexpr{if(input$checkbox==1) "permitted;" else "not permitted;"}
+\item Min no. of DLTs needed out of \Sexpr{input$A} patients to assign \Sexpr{input$B} more $(C)$ = \Sexpr{input$C};
+\item Max no. of DLTs needed out of \Sexpr{input$A} patients to assign \Sexpr{input$B} more, otherwise trial \Sexpr{if(input$checkbox==1) "stops/de-escalates" else "stops"} $(D)$ = \Sexpr{input$D};
+\item Maximum no. of DLTs out of \Sexpr{input$A + input$B} patients so dose may be escalated $(E)$= \Sexpr{input$E}.
+\end{itemize}
+
+\noindent
+The trial included \Sexpr{input$numdoses} dose levels with true underlying dose-toxicity probabilities shown in Table \ref{table1}.
+
+<<rtoxprobs, echo=FALSE, results='asis'>>=
+svec<-sapply(1:input$numdoses, function(z) input[[paste0("slider",z)]])
+toxtab<-data.frame(dl=1:input$numdoses,probs=svec)
+colnames(toxtab)<-c("Dose Level", "True P(DLT)")
+print(xtable(t(toxtab), digits=matrix(c(rep(0,input$numdoses+1),rep(2,input$numdoses+1)), nrow=2, byrow=T), caption="True probabilities of DLT.", align=c("l",rep("c",input$numdoses)), label="table1"), include.colnames=FALSE, hline.after=c(-1,1,2))
+@
+
+\vspace*{-7mm}
+
+\subsection*{Design specific operating characteristics}
+
+\vspace*{-2mm}
+
+<<r4, echo=FALSE, results='asis'>>=
+df<-clopperPearsonAplusB(input$w,input$A,input$B,input$C,input$E,deesc=input$checkbox)
+print(xtable(df, digits=matrix(rep(2,4*nrow(df)),nrow=nrow(df), byrow=T), label="tableClopper", caption=paste0(input$w,"$\\%$"," Clopper-Pearson confidence intervals for all possible data collections at the chosen MTD."), align=c("l","c","c","c")), include.rownames=FALSE)
+@
+
+<<r5, echo=FALSE, results='asis'>>=
+x<-round(foofind(input$A,input$B,input$C,input$D,input$E),3)
+@
+
+\noindent
+The tipping point for a \Sexpr{input$A} + \Sexpr{input$B} design \Sexpr{if(input$checkbox==1) "with" else "without"} dose de-escalation and $(C, D, E)$ = (\Sexpr{input$C}, \Sexpr{input$D}, \Sexpr{input$E}) is \Sexpr{x}.
+
+
+\vspace*{-2mm}
+
+\subsection*{Scenario specific operating characteristics}
+
+\vspace*{-2mm}
+
+\begin{table}[ht]
+\centering
+\begin{minipage}[t]{.495\textwidth}
+\centering
+<<echo=FALSE,results='asis'>>=
+df2<-x4()
+print(xtable(df2, align=c("l","c","c","c")),
+  floating=FALSE,
+  hline.after=NULL,
+  add.to.row=list(pos=list(-1,0, nrow(df2)),
+  command=c('\\toprule\n','\\midrule\n','\\bottomrule\n')))
+@
+\caption{Expected Toxicity Level (ETL), mean number of DLTs and Expected Overall Toxicity Rate (EOTR).}
+\end{minipage}
+\begin{minipage}[t]{.495\textwidth}
+\centering
+<<echo=FALSE,results='asis'>>=
+df3<-x1()
+print(xtable(df3, align=c("l","c","c","c"), digits=matrix(c(0,2,0,0),nrow=1, byrow=T)),
+  floating=FALSE,
+  hline.after=NULL,
+  add.to.row=list(pos=list(-1,0, nrow(df3)),
+  command=c('\\toprule\n','\\midrule\n','\\bottomrule\n')))
+@
+\caption{Sample size distribution summary.}
+\end{minipage}
+
+\vspace{5mm}
+
+\begin{minipage}[t]{.95\textwidth}
+\centering
+<<echo=FALSE,results='asis'>>=
+print(xtable(x2(), caption="Experimentation and MTD recommendation proportions per dose level.", align=c("l",rep("c",input$numdoses+1))), floating=FALSE)
+@
+\caption{Experimentation and MTD recommendation proportions per dose level.}
+\end{minipage}
+
+\vspace{5mm}
+
+\begin{minipage}[t]{.95\textwidth}
+\centering
+<<echo=FALSE,results='asis'>>=
+df4<-x3()
+comment          <- list()
+comment$pos      <- list()
+comment$pos[[1]] <- c(nrow(df4))
+comment$command  <- c(paste("\\hline \n",  # we`ll replace all default hlines with this and the ones below
+                            "\\multicolumn{2}{l}{* Of all trials that recommend an MTD}  \n", sep = ""))
+print(xtable(df4, caption="Experimentation and MTD recommendation proportions relating to true probabilities of DLT.", align=c("l","c","c","c","c","c")), add.to.row = comment, hline.after = c(-1, 0), floating=FALSE)
+@
+\caption{Experimentation and MTD recommendation proportions relating to true probabilities of DLT.}
+\end{minipage}
+\end{table}
+
+\vspace{10mm}
+
+
+\blfootnote{Design summary and formulae at \url{https://internal.shinyapps.io/graham-wheeler/AplusB/AplusB_formulae_sheet.pdf}.}
+
+\clearpage
+
+\subsection*{Plot of trial operating characteristics}
+
+<<rplot, echo=FALSE, results='asis'>>=
+plot.threep3(data())
+@
+
+
+\end{document}
