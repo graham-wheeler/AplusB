@@ -169,7 +169,7 @@ shinyServer(function(input, output) {
 output$report = downloadHandler(
 filename = function() { paste(input$A,input$B,input$C,input$D,input$E,input$checkbox,input$numdoses,Sys.time(), '.pdf', sep='') },
 content = function(file) {
-out = knit2pdf('input.Rnw', clean = TRUE)
+out = knit2pdf('report.Rnw', clean = TRUE)
 file.copy(out, file) # move pdf to file for downloading
   },
   contentType = 'application/pdf'
