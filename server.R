@@ -11,7 +11,9 @@ library(plyr)
 library(boot)
 library(xtable)
 library(parallel)
+library(binom)
 source("helpers.R")
+
 
 appCSS <- "
 #loading-content {
@@ -117,9 +119,14 @@ shinyServer(function(input, output) {
       "Table 4: Expected Toxicity Level (ETL - expected DLT rate at the MTD averaged over all trials), mean number of DLTs per trial and Expected Overall Toxicity Rate (EOTR - mean number of DLTs divided by the mean sample size)."
     }
   })
-  output$tabtext5 <- renderText({
+  output$tabtext5a <- renderText({
     if(input$actionButton>0){
-      paste("Table 5: ", input$w, "% Clopper-Pearson confidence intervals for all possible data collections at the chosen MTD.", sep="")
+      paste("Table 5a: ", input$w, "% Clopper-Pearson/Exact confidence intervals for all possible data collections at the chosen MTD.", sep="")
+    }
+  })
+  output$tabtext5b <- renderText({
+    if(input$actionButton>0){
+      paste("Table 5b: ", input$w, "% Wilson score confidence intervals for all possible data collections at the chosen MTD.", sep="")
     }
   })
   output$tabtext6 <- renderText({
@@ -155,9 +162,14 @@ shinyServer(function(input, output) {
     x4()
   })
   
-  output$ClopperPearson <- renderTable({
+  output$exact <- renderTable({
     if(input$actionButton >0){
-    clopperPearsonAplusB(input$w,input$A,input$B,input$C,input$E,deesc=input$checkbox)}
+    intervalAplusB(input$w,input$A,input$B,input$C,input$E,deesc=input$checkbox, method="exact")}
+  }, include.rownames=FALSE)
+  
+  output$wilson <- renderTable({
+    if(input$actionButton >0){
+      intervalAplusB(input$w,input$A,input$B,input$C,input$E,deesc=input$checkbox, method="wilson")}
   }, include.rownames=FALSE)
   
   output$TippingPoint <- renderText({
@@ -174,5 +186,4 @@ file.copy(out, file) # move pdf to file for downloading
   },
   contentType = 'application/pdf'
   )
-
 })
