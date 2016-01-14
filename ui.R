@@ -11,6 +11,7 @@ library(plyr)
 library(boot)
 library(xtable)
 library(parallel)
+library(binom)
 source("helpers.R")
 
 appCSS <- "
@@ -29,18 +30,12 @@ appCSS <- "
 "
 
 shinyUI(fluidPage(
-  #useShinyjs(),
-  #inlineCSS(appCSS),
-  #div(
-    #id = "loading-content",
-    #h2("Loading...")
-  #),
-  
+
   div(
     id = "app-content",
 
   # Application title
-  titlePanel("AplusB: A + B Design Investigator for phase I dose-escalation studies"),
+  titlePanel("AplusB: A + B design investigator for phase I dose-escalation studies"),
   h4("Graham Wheeler, MRC Biostatistics Unit, Cambridge, UK"),
   helpText(a("graham.wheeler@mrc-bsu.cam.ac.uk", href="mailto:graham.wheeler@mrc-bsu.cam.ac.uk")),
   
@@ -70,7 +65,7 @@ shinyUI(fluidPage(
                   value = 4),
       uiOutput("inumdoses"),
       br(),
-      h4("Design Parameters"),
+      h4("Design parameters"),
       sliderInput("A",
                   "A (Number of patients in first cohort that receive a certain dose)",
                   min = 1,
@@ -84,12 +79,10 @@ shinyUI(fluidPage(
       uiOutput("C"),
       uiOutput("D"),
       uiOutput("E"),
-      column(6, checkboxInput("checkbox", label = "Allow dose de-escalation?", value = FALSE)),
+      column(12, checkboxInput("checkbox", label = "Allow dose de-escalation?", value = FALSE)),
       sliderInput("w", "Confidence level for confidence intervals around identified MTD (%)", min=50, max=99, value=95),
-      #textInput("tox.cutpoints", "Toxicity Intervals for Table", value="NULL"),
-      actionButton("actionButton", "Get Design Properties!"),
-      #radioButtons('format', 'Report format', c('PDF', 'HTML', 'Word'), inline = TRUE),
-      downloadButton('report', 'Download Report (PDF)'),
+      actionButton("actionButton", "Get design properties"),
+      downloadButton('report', 'Download report (PDF)'),
       conditionalPanel(condition="$('html').hasClass('shiny-busy')",
                        tags$div("Loading...",id="loadmessage"))
     ),
@@ -103,7 +96,7 @@ shinyUI(fluidPage(
       p("[1] Lin, Y. and Shih, W.J. (2001). Statistical properties of the traditional algorithm-based designs for phase I cancer clinical trials, ", em("Biostatistics"), strong("2"),"2:203-215."),
       p("[2] Wheeler, G.M. (2014). Adaptive designs for phase I dose-escalation studies, ", em("PhD thesis, University of Cambridge."), helpText(a("http://www.lib.cam.ac.uk/deptserv/manuscripts/dissertations.html", href="http://www.lib.cam.ac.uk/deptserv/manuscripts/dissertations.html",target="_blank"))),
       tabsetPanel(
-        tabPanel("Scenario Plots",
+        tabPanel("Scenario plots",
                  tags$head(tags$style(type="text/css", "
              #loadmessage {
                position: fixed;
@@ -123,7 +116,7 @@ shinyUI(fluidPage(
       plotOutput("threep3Plot"),
       textOutput("plottext")
     ),
-    tabPanel("Scenario Operating Characteristics",
+    tabPanel("Scenario operating characteristics",
              tags$head(tags$style(type="text/css", "
              #loadmessage {
                position: fixed;
@@ -154,7 +147,7 @@ shinyUI(fluidPage(
       textOutput("tabtext4"),
       br()
     ),
-    tabPanel("Design Operating Characteristics",
+    tabPanel("Design operating characteristics",
              tags$head(tags$style(type="text/css", "
              #loadmessage {
                position: fixed;
@@ -170,9 +163,12 @@ shinyUI(fluidPage(
                z-index: 105;
              }
           ")),
-        p("The operating characteristics displayed here depend on the design only, i.e. values of A, B, C, D, E, the option to include dose de-escalation and the confidence level for Clopper-Pearson confidence interval calculations. These values will not change when the number of doses or the dose-toxicity probabilities are changed."),
-      tableOutput("ClopperPearson"),
-      textOutput("tabtext5"),
+        p("The operating characteristics displayed here depend on the design only, i.e. values of A, B, C, D, E, the option to include dose de-escalation and the confidence level for the confidence interval calculations. These values will not change when the number of doses or the dose-toxicity probabilities are changed."),
+      tableOutput("exact"),
+      textOutput("tabtext5a"),
+      br(),
+      tableOutput("wilson"),
+      textOutput("tabtext5b"),
       br(),
       textOutput("TippingPoint"),
       textOutput("tabtext6"),
