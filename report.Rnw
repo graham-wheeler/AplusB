@@ -50,10 +50,36 @@ print(xtable(t(toxtab), digits=matrix(c(rep(0,input$numdoses+1),rep(2,input$numd
 
 \vspace*{-2mm}
 
-<<r4, echo=FALSE, results='asis'>>=
-df<-clopperPearsonAplusB(input$w,input$A,input$B,input$C,input$E,deesc=input$checkbox)
-print(xtable(df, digits=matrix(rep(2,4*nrow(df)),nrow=nrow(df), byrow=T), label="tableClopper", caption=paste0(input$w,"$\\%$"," Clopper-Pearson confidence intervals for all possible data collections at the chosen MTD."), align=c("l","c","c","c")), include.rownames=FALSE)
+\begin{table}[ht]
+\centering
+\begin{minipage}[t]{.59\textwidth}
+\centering
+<<echo=FALSE,results='asis'>>=
+df<-intervalAplusB(input$w,input$A,input$B,input$C,input$E,deesc=input$checkbox, method="exact")
+addtorow <- list()
+addtorow$pos <- list(-1, -1, 0, nrow(df))
+addtorow$command <- c('\\toprule\n',paste0(paste0('& \\multicolumn{2}{c}{Exact/Clopper-Pearson}', collapse=''), '\\\\ \\cline{2-3}'),'\\midrule\n','\\bottomrule\n')
+
+print(xtable(df, digits=matrix(rep(2,4*nrow(df)),nrow=nrow(df), byrow=T), label="Exact", caption=paste0(input$w,"$\\%$"," Clopper-Pearson/Exact confidence intervals for all possible data collections at the chosen MTD."), align=c("l","c","c","c")), include.rownames=FALSE, floating=FALSE,
+  hline.after=NULL,  
+  add.to.row=addtorow)
 @
+\end{minipage}
+\begin{minipage}[t]{.40\textwidth}
+\centering
+<<echo=FALSE,results='asis'>>=
+df<-intervalAplusB(input$w,input$A,input$B,input$C,input$E,deesc=input$checkbox, method="wilson")[,2:3]
+addtorow <- list()
+addtorow$pos <- list(-1, -1, 0, nrow(df))
+addtorow$command <- c('\\toprule\n',paste0(paste0('\\multicolumn{2}{c}{Wilson Score}', collapse=''), '\\\\ \\cline{1-2}'),'\\midrule\n','\\bottomrule\n')
+print(xtable(df, digits=matrix(rep(2,3*nrow(df)),nrow=nrow(df), byrow=T), label="Wilson", caption=paste0(input$w,"$\\%$"," Wilson score confidence intervals for all possible data collections at the chosen MTD."), align=c("l","c","c")), include.rownames=FALSE,
+  floating=FALSE,
+  hline.after=NULL,
+  add.to.row=addtorow)
+@
+\end{minipage}
+\caption{\Sexpr{input$w}\% Exact and Wilson confidence intervals for possible data collections at the chosen MTD.}
+\end{table}
 
 <<r5, echo=FALSE, results='asis'>>=
 x<-round(foofind(input$A,input$B,input$C,input$D,input$E),3)
