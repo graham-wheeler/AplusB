@@ -18,11 +18,9 @@ threep3ABCDE<-function(truep, A, B, C, D, E, dose = NULL){
   mcohort <- 2 * doses
   mcplus1 <- mcohort + 1
   pmat <- as.data.frame(matrix(NA, nrow = 1, ncol = 3 * mcplus1))
-  colnames(pmat) <- c("stop", paste(c("d", "tox", "ssize"),
-                                    rep(1:mcohort, each = 3)), paste("d", mcplus1))
+  colnames(pmat) <- c("stop", paste(c("d", "tox", "ssize"), rep(1:mcohort, each = 3)), paste("d", mcplus1))
   pmat[1, 1:2] <- c(0,  1)
-  pmat <- pmat[rep(seq_len(nrow(pmat)), rep(A+1, nrow(pmat))),
-               ]
+  pmat <- pmat[rep(seq_len(nrow(pmat)), rep(A+1, nrow(pmat))), ]
   pmat[, "tox 1"] <- 0:A
   pmat[, "ssize 1"] <- A
   pmat[pmat[, "tox 1"] <= D, "d 2"] <- 1
@@ -34,38 +32,30 @@ threep3ABCDE<-function(truep, A, B, C, D, E, dose = NULL){
     path.mat<-stopped.pmat # Edit from published threep3 - keeps record of all paths generated
     dose.mat <- stopped.pmat[, grep("d", names(stopped.pmat))]
     tox.mat <- stopped.pmat[, grep("tox", names(stopped.pmat))]
-    prob <- apply(matrix(dbinom(as.matrix(tox.mat), A, truep[as.matrix(dose.mat)]),
-                         nrow = nrow(dose.mat)), 1, prod, na.rm = T)
-    ssize <- A * apply(!is.na(stopped.pmat[, grep("d", names(stopped.pmat))]),
-                       1, sum)
-    last.cohort <- apply(!is.na(stopped.pmat[, grep("d", names(stopped.pmat))]),
-                         1, sum)
+    prob <- apply(matrix(dbinom(as.matrix(tox.mat), A, truep[as.matrix(dose.mat)]), nrow = nrow(dose.mat)), 1, prod, na.rm = T)
+    ssize <- A * apply(!is.na(stopped.pmat[, grep("d", names(stopped.pmat))]), 1, sum)
+    last.cohort <- apply(!is.na(stopped.pmat[, grep("d", names(stopped.pmat))]), 1, sum)
     last.drug.column <- paste("d", last.cohort)
     last.drug <- sapply(1:nrow(stopped.pmat), function(j) {
       stopped.pmat[j, last.drug.column[j]]
     })
     previous.drug.column <- paste("d", last.cohort - 1)
     previous.drug <- sapply(1:nrow(stopped.pmat), function(j) {
-      ifelse(previous.drug.column[j] == "d 0", 0, stopped.pmat[j,
-                                                               previous.drug.column[j]])
+      ifelse(previous.drug.column[j] == "d 0", 0, stopped.pmat[j, previous.drug.column[j]])
     })
     last.tox.column <- paste("tox", last.cohort)
     last.tox <- sapply(1:nrow(stopped.pmat), function(j) {
       stopped.pmat[j, last.tox.column[j]]
     })
     mtd <- rep(NA, nrow(stopped.pmat))
-    mtd[last.tox <= D & previous.drug == last.drug] <- last.drug[last.tox <=
-                                                                   D & previous.drug == last.drug] - 1
-    mtd[last.tox <= D & previous.drug != last.drug] <- last.drug[last.tox <=
-                                                                   D & previous.drug != last.drug]
+    mtd[last.tox <= D & previous.drug == last.drug] <- last.drug[last.tox <= D & previous.drug == last.drug] - 1
+    mtd[last.tox <= D & previous.drug != last.drug] <- last.drug[last.tox <= D & previous.drug != last.drug]
     mtd[last.tox < C] <- last.drug[last.tox < C]
     mtd[last.tox > D] <- last.drug[last.tox > D] - 1
     exp <- sapply(1:doses, function(j) {
-      sum(A * (stopped.pmat[, grep("d", names(stopped.pmat))] ==
-                 j) * prob/ssize, na.rm = T)
+      sum(A * (stopped.pmat[, grep("d", names(stopped.pmat))] == j) * prob/ssize, na.rm = T)
     })
-    dlt.no <- apply(stopped.pmat[, grep("tox", names(stopped.pmat))],
-                    1, sum, na.rm = T)
+    dlt.no <- apply(stopped.pmat[, grep("tox", names(stopped.pmat))], 1, sum, na.rm = T)
   }
   for (i in 3:mcplus1) {
     cat(paste(round(100 * i/mcplus1), "% complete\n", sep = ""))
@@ -89,33 +79,25 @@ threep3ABCDE<-function(truep, A, B, C, D, E, dose = NULL){
     if(dim(pmat3)[1]>0){
       pmat3[, tc] <- 0:A
       pmat3[, sc] <- A
-      #pmat1[pmat1[, tc] == 1 & pmat1[, tb] == 0, dd] <- pmat1[pmat1[, tc] == 1 & pmat1[, tb] == 0, dc]
       pmat3[pmat3[, tc] < C & pmat3[, dc] + 1 <= doses, dd] <- pmat3[pmat3[, tc] < C  & pmat3[, dc] + 1 <= doses, dc] + 1
       pmat3[pmat3[, tc] <= D & pmat3[, tc] >= C, dd] <- pmat3[pmat3[, tc] <= D & pmat3[, tc] >= C, dc]
     }else{pmat3<-NULL}
     
     pmat<-rbind(pmat1,pmat3)
-    excluding.dd <- names(pmat)[grepl("d ", names(pmat)) &
-                                  names(pmat) != dd]
-    cnt <- ifelse(sum(as.numeric(!is.na(pmat[, dd])))==0, 0, apply(pmat[!is.na(pmat[, dd]), dd] == pmat[!is.na(pmat[,
-                                                                                                                    dd]), excluding.dd], 1, sum, na.rm = T)  )
+    excluding.dd <- names(pmat)[grepl("d ", names(pmat)) & names(pmat) != dd]
+    cnt <- ifelse(sum(as.numeric(!is.na(pmat[, dd])))==0, 0, apply(pmat[!is.na(pmat[, dd]), dd] == pmat[!is.na(pmat[,dd]), excluding.dd], 1, sum, na.rm = T)  )
     pmat[!is.na(pmat[, dd]), dd][cnt > 1] <- NA
     pmat[is.na(pmat[, dd]), "stop"] <- 1
     stopped.pmat <- pmat[pmat$stop == 1, ]
     if(dim(stopped.pmat)[1]>0){
       path.mat<-rbind(path.mat,stopped.pmat) # Edit from published threep3 - keeps record of all paths generated
-      dose.mat <- stopped.pmat[, grep("d", names(stopped.pmat))[1:(i -
-                                                                     1)]]
-      tox.mat <- stopped.pmat[, grep("tox", names(stopped.pmat))[1:(i -
-                                                                      1)]]
-      ssize.mat <- stopped.pmat[, grep("ssize", names(stopped.pmat))[1:(i -
-                                                                          1)]]
-      prob.new <- apply(matrix(dbinom(as.matrix(tox.mat), as.matrix(ssize.mat),
-                                      truep[as.matrix(dose.mat)]), nrow = nrow(dose.mat)),
-                        1, prod, na.rm = T)
+      dose.mat <- stopped.pmat[, grep("d", names(stopped.pmat))[1:(i - 1)]]
+      tox.mat <- stopped.pmat[, grep("tox", names(stopped.pmat))[1:(i - 1)]]
+      ssize.mat <- stopped.pmat[, grep("ssize", names(stopped.pmat))[1:(i - 1)]]
+      prob.new <- apply(matrix(dbinom(as.matrix(tox.mat), as.matrix(ssize.mat), truep[as.matrix(dose.mat)]), nrow = nrow(dose.mat)), 1, prod, na.rm = T)
       prob <- c(prob, prob.new)
       
-      ssize.new <- apply(ssize.mat,1,sum)#(rep(3 * (i - 1), nrow(stopped.pmat))
+      ssize.new <- apply(ssize.mat,1,sum)
       ssize <- c(ssize, ssize.new)
       last.drug <- stopped.pmat[, dc]
       previous.drug <- stopped.pmat[, db]
@@ -132,13 +114,11 @@ threep3ABCDE<-function(truep, A, B, C, D, E, dose = NULL){
       
       mtd <- c(mtd, mtd.new)
       exp <- exp + sapply(1:doses, function(j) { sum((stopped.pmat[, grep("ssize", names(stopped.pmat))])*(stopped.pmat[, grep("d", names(stopped.pmat))] == j) * prob.new/ssize.new, na.rm = T) })
-      dlt.no <- c(dlt.no, apply(stopped.pmat[, grep("tox",
-                                                    names(stopped.pmat))], 1, sum, na.rm = T))
+      dlt.no <- c(dlt.no, apply(stopped.pmat[, grep("tox", names(stopped.pmat))], 1, sum, na.rm = T))
     }
   }
   path.mat<-cbind(path.mat,prob,ssize,mtd) # Edit from published threep3 - keeps record of all paths generated
-  obj <- list(prob = prob, ssize = ssize, mtd = mtd, exp = exp,
-              dlt.no = dlt.no, truep = truep, dose = dose, path.mat = path.mat)
+  obj <- list(prob = prob, ssize = ssize, mtd = mtd, exp = exp, dlt.no = dlt.no, truep = truep, dose = dose, path.mat = path.mat)
   class(obj) <- "threep3"
   return(obj)
 }
@@ -152,13 +132,10 @@ threep3ABCDE.desc<-function (truep, A, B, C, D, E, dose = NULL)
   doses <- length(truep)
   mcohort <- 2 * doses
   mcplus1 <- mcohort + 1
-  pmat <- as.data.frame(matrix(NA, nrow = 1, ncol = 3 * mcplus1 +
-                                 1))
-  colnames(pmat) <- c("stop", "desc", paste(c("d", "tox", "ssize"),
-                                            rep(1:mcohort, each = 3)), paste("d", mcplus1))
+  pmat <- as.data.frame(matrix(NA, nrow = 1, ncol = 3 * mcplus1 + 1))
+  colnames(pmat) <- c("stop", "desc", paste(c("d", "tox", "ssize"), rep(1:mcohort, each = 3)), paste("d", mcplus1))
   pmat[1, 1:3] <- c(0, 0, 1)
-  pmat <- pmat[rep(seq_len(nrow(pmat)), rep(A+1, nrow(pmat))),
-               ]
+  pmat <- pmat[rep(seq_len(nrow(pmat)), rep(A+1, nrow(pmat))), ]
   pmat[, "tox 1"] <- 0:A
   pmat[,"ssize 1"] <- A
   pmat[pmat[, "tox 1"] <= D, "d 2"] <- 1
@@ -170,38 +147,30 @@ threep3ABCDE.desc<-function (truep, A, B, C, D, E, dose = NULL)
     path.mat<-stopped.pmat # Edit from published threep3 - keeps record of all paths generated
     dose.mat <- stopped.pmat[, grep("d", names(stopped.pmat))]
     tox.mat <- stopped.pmat[, grep("tox", names(stopped.pmat))]
-    prob <- apply(matrix(dbinom(as.matrix(tox.mat), A, truep[as.matrix(dose.mat)]),
-                         nrow = nrow(dose.mat)), 1, prod, na.rm = T)
-    ssize <- A * apply(!is.na(stopped.pmat[, grep("d", names(stopped.pmat))]),
-                       1, sum)
-    last.cohort <- apply(!is.na(stopped.pmat[, grep("d", names(stopped.pmat))]),
-                         1, sum)
+    prob <- apply(matrix(dbinom(as.matrix(tox.mat), A, truep[as.matrix(dose.mat)]), nrow = nrow(dose.mat)), 1, prod, na.rm = T)
+    ssize <- A * apply(!is.na(stopped.pmat[, grep("d", names(stopped.pmat))]), 1, sum)
+    last.cohort <- apply(!is.na(stopped.pmat[, grep("d", names(stopped.pmat))]), 1, sum)
     last.drug.column <- paste("d", last.cohort)
     last.drug <- sapply(1:nrow(stopped.pmat), function(j) {
       stopped.pmat[j, last.drug.column[j]]
     })
     previous.drug.column <- paste("d", last.cohort - 1)
     previous.drug <- sapply(1:nrow(stopped.pmat), function(j) {
-      ifelse(previous.drug.column[j] == "d 0", 0, stopped.pmat[j,
-                                                               previous.drug.column[j]])
+      ifelse(previous.drug.column[j] == "d 0", 0, stopped.pmat[j, previous.drug.column[j]])
     })
     last.tox.column <- paste("tox", last.cohort)
     last.tox <- sapply(1:nrow(stopped.pmat), function(j) {
       stopped.pmat[j, last.tox.column[j]]
     })
     mtd <- rep(NA, nrow(stopped.pmat))
-    mtd[last.tox <=D & previous.drug == last.drug] <- last.drug[last.tox <=
-                                                                  D & previous.drug == last.drug] - 1
-    mtd[last.tox <= D & previous.drug != last.drug] <- last.drug[last.tox <=
-                                                                   D & previous.drug != last.drug]
+    mtd[last.tox <=D & previous.drug == last.drug] <- last.drug[last.tox <= D & previous.drug == last.drug] - 1
+    mtd[last.tox <= D & previous.drug != last.drug] <- last.drug[last.tox <= D & previous.drug != last.drug]
     mtd[last.tox < C] <- last.drug[last.tox < C]
     mtd[last.tox > D] <- last.drug[last.tox > D] - 1
     exp <- sapply(1:doses, function(j) {
-      sum(A * (stopped.pmat[, grep("d", names(stopped.pmat))] ==
-                 j) * prob/ssize, na.rm = T)
+      sum(A * (stopped.pmat[, grep("d", names(stopped.pmat))] == j) * prob/ssize, na.rm = T)
     })
-    dlt.no <- apply(stopped.pmat[, grep("tox", names(stopped.pmat))],
-                    1, sum, na.rm = T)
+    dlt.no <- apply(stopped.pmat[, grep("tox", names(stopped.pmat))], 1, sum, na.rm = T)
   }
   for (i in 3:mcplus1) {
     cat(paste(round(100 * i/mcplus1), "% complete\n", sep = ""))
@@ -257,10 +226,9 @@ threep3ABCDE.desc<-function (truep, A, B, C, D, E, dose = NULL)
       dose.mat <- stopped.pmat[, grep("d ", names(stopped.pmat))[1:(i - 1)]]
       tox.mat <- stopped.pmat[, grep("tox", names(stopped.pmat))[1:(i - 1)]]
       ssize.mat <- stopped.pmat[, grep("ssize", names(stopped.pmat))[1:(i - 1)]]
-      prob.new <- apply(matrix(dbinom(as.matrix(tox.mat), as.matrix(ssize.mat),
-                                      truep[as.matrix(dose.mat)]), nrow = nrow(dose.mat)),1, prod, na.rm = T)
+      prob.new <- apply(matrix(dbinom(as.matrix(tox.mat), as.matrix(ssize.mat), truep[as.matrix(dose.mat)]), nrow = nrow(dose.mat)),1, prod, na.rm = T)
       prob <- c(prob, prob.new)
-      ssize.new <- apply(ssize.mat,1,sum)#rep(3 * (i - 1), nrow(stopped.pmat))
+      ssize.new <- apply(ssize.mat,1,sum)
       ssize <- c(ssize, ssize.new)
       last.drug <- stopped.pmat[, dc]
       previous.drug <- stopped.pmat[, db]
@@ -284,13 +252,11 @@ threep3ABCDE.desc<-function (truep, A, B, C, D, E, dose = NULL)
       mtd <- c(mtd, mtd.new)
       exp <- exp + sapply(1:doses, function(j) {
         sum((stopped.pmat[,grep("ssize", names(stopped.pmat))]) * (stopped.pmat[, grep("d", names(stopped.pmat))] == j) * prob.new/ssize.new, na.rm = T) })
-      dlt.no <- c(dlt.no, apply(stopped.pmat[, grep("tox",
-                                                    names(stopped.pmat))], 1, sum, na.rm = T))
+      dlt.no <- c(dlt.no, apply(stopped.pmat[, grep("tox", names(stopped.pmat))], 1, sum, na.rm = T))
     }
   }
   path.mat<-cbind(path.mat,prob,ssize,mtd) # Edit from published threep3 - keeps record of all paths generated
-  obj <- list(prob = prob, ssize = ssize, mtd = mtd, exp = exp,
-              dlt.no = dlt.no, truep = truep, dose = dose, path.mat = path.mat)
+  obj <- list(prob = prob, ssize = ssize, mtd = mtd, exp = exp, dlt.no = dlt.no, truep = truep, dose = dose, path.mat = path.mat)
   class(obj) <- "threep3"
   return(obj)
 }
@@ -403,34 +369,36 @@ stats.exp.fn<-function(obj){
   return(list(tab2=tab2))
 }
 
-clopperPearsonAplusB<-function(w=95, A=3, B=3, C=1, E=1, deesc=FALSE){
+
+intervalAplusB<-function(w=95, A=3, B=3, C=1, E=1, deesc=FALSE, method){
   v<-w/100
   if(deesc==FALSE){
     if(C>0){
-     vals<-seq(0,C-1,by=1)
-     set1<-matrix(NA, ncol=3, nrow=C)
-     for(i in 1:length(vals)){
-      set1[i,1]<-paste(vals[i],"/",A,sep="")
-      set1[i,2:3]<-c(round(100*qbeta((1-v)/2,vals[i],A-vals[i]+1),2),round(100*qbeta((1+v)/2,vals[i]+1,A-vals[i]),2))
+      vals<-seq(0,C-1,by=1)
+      set1<-matrix(NA, ncol=3, nrow=C)
+      for(i in 1:length(vals)){
+        set1[i,1]<-paste(vals[i],"/",A,sep="")
+        set1[i,2:3]<-round(100*unlist(binom.confint(vals[i],A,v,method=method)[,5:6]),2)
       }
-     }else{set1<-NULL}
+    }else{set1<-NULL}
     set2<-matrix(NA, ncol=3, nrow=E-C+1)
     vals<-seq(C,E,by=1)
     for(i in 1:length(vals)){
-     set2[i,1]<-paste(vals[i],"/",A+B,sep="")
-     set2[i,2:3]<-c(round(100*qbeta((1-v)/2,vals[i],A+B-vals[i]+1),2),round(100*qbeta((1+v)/2,vals[i]+1,A+B-vals[i]),2))
-     }
+      set2[i,1]<-paste(vals[i],"/",A+B,sep="")
+      set2[i,2:3]<-round(100*unlist(binom.confint(vals[i],A+B,v,method=method)[,5:6]),2)
+    }
     set<-rbind(set1,set2)
   }else{
     set<-matrix(NA, ncol=3, nrow=E+1)
     for(i in 0:E){
       set[i+1,1]<-paste(i,"/",A+B,sep="")
-      set[i+1,2:3]<-c(round(100*qbeta((1-v)/2,i,A+B-i+1),2),round(100*qbeta((1+v)/2,i+1,A+B-i),2))
+      set[i+1,2:3]<-round(100*unlist(binom.confint(i,A+B,v,method=method)[,5:6]),2)
     }
   }
   colnames(set)<-c("Data at MTD", "Lower Bound (%)", "Upper Bound (%)")
   set
 }
+
 
 foo<-function(p,A,B,C,D,E){
   pp<-inv.logit(p)
