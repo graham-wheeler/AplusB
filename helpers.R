@@ -305,12 +305,12 @@ plot.threep3<-function(x,file=NULL,...){
   # experimentation
   exp.threep3<-rep(dose,10000*x$exp)
   df.exp.threep3<-data.frame(exp=as.factor(exp.threep3))
-  b<-ggplot()+geom_histogram(aes(x=exp,y=..count../100),data=df.exp.threep3)+xlab(dose.label)+ylab("Percent")+ggtitle("Experimentation")
+  b<-ggplot()+geom_bar(aes(x=exp,y=..count../100),data=df.exp.threep3, binwidth=NULL)+xlab(dose.label)+ylab("Percent")+ggtitle("Experimentation")
   
   # recommendation
   rec.threep3<-dose[x$mtd]
   df.rec.threep3<-data.frame(rec=factor(rec.threep3),weight=x$prob[x$mtd!=0])
-  c<-ggplot()+geom_histogram(aes(x=rec,y=100*..count..,weight=weight),data=df.rec.threep3)+xlab(dose.label)+ylab("Percent")+ggtitle("Recommendation")
+  c<-ggplot()+geom_bar(aes(x=rec,y=100*..count..,weight=weight),data=df.rec.threep3, binwidth=NULL)+xlab(dose.label)+ylab("Percent")+ggtitle("Recommendation")
   
   # observed DLTs
   obs.threep3<-100*x$dlt.no/x$ssize
@@ -353,7 +353,7 @@ stats.exp.fn<-function(obj){
   dose.cond<-numpat/ssize[x]
   prob.cond<-ifelse(length(index)==0,0,sum(tox.mat[x,index])/numpat)
   c(numpat, dose.cond, prob.cond)
-  }), mc.cores=2)
+  }), mc.cores=if(.Platform$OS.type == "windows") {1} else {2})
   numpat.mat<-matrix(unlist(out)[seq(1,length(unlist(out)),by=3)],nrow=N,ncol=M,byrow=T)
   dose.cond.mat<-matrix(unlist(out)[seq(2,length(unlist(out)),by=3)],nrow=N,ncol=M,byrow=T)
   prob.cond.mat<-matrix(unlist(out)[seq(3,length(unlist(out)),by=3)],nrow=N,ncol=M,byrow=T)
